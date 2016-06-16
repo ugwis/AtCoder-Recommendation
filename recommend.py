@@ -88,8 +88,15 @@ def fetch_uid(userid):
     connector.close()
     return uid
 
+def count_solved(solveds,pid):
+    count=0
+    for solved in solveds:
+        if pid == solved:
+            count+=1
+    return count
+
 if __name__ == "__main__":
-    userid="ugwis"
+    userid=sys.argv[1]
     uid=fetch_uid(userid)
     user_solved = fetch_users_solveds()
     users = fetch_user()
@@ -97,11 +104,13 @@ if __name__ == "__main__":
     for user in users:
         if user['uid'] in user_solved:
             distance = sim_distance(user_solved,uid,user['uid'])
-            print(user['userid'] + " " + str(distance))
+            #print(user['userid'] + " " + str(distance))
             for solved_pid in user_solved[user['uid']] - user_solved[uid]:
                 if not solved_pid in cand:
                     cand[solved_pid] = 0.0
                 cand[solved_pid] += distance
+    for k,v in cand.items():
+        v*=count_solved(user_solved,k)
     recommended_pid = max(cand,key=(lambda x:cand[x]))
     print(str(recommended_pid) + " " + str(cand[recommended_pid]))
     """for k,v in sorted(cand.items(),key=lambda x:x[1]):
