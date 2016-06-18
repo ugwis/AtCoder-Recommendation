@@ -95,8 +95,22 @@ def count_solved(solveds,pid):
             count+=1
     return count
 
-if __name__ == "__main__":
-    userid=sys.argv[1]
+def fetch_problem_url(pid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    url = ""
+    try:
+        cur.execute("""select 'http://' || contestid || '.contest.atcoder.jp/tasks/' || problemid as url from problems left join contests on problems.cid=contests.cid where pid=(%s);""",(pid,))
+        connector.commit()
+        for row in cur:
+            url = row['url']
+    except Exception as e:
+        print(e.message)
+    cur.close()
+    connector.close()
+    return url
+
+def recommend_problem(userid):
     uid=fetch_uid(userid)
     user_solved = fetch_users_solveds()
     users = fetch_user()
@@ -112,7 +126,8 @@ if __name__ == "__main__":
     for k,v in cand.items():
         v*=count_solved(user_solved,k)
     recommended_pid = max(cand,key=(lambda x:cand[x]))
-    print(str(recommended_pid) + " " + str(cand[recommended_pid]))
-    """for k,v in sorted(cand.items(),key=lambda x:x[1]):
-        print(k,v)"""
-    exit(0)
+    return fetch_problem_url(recommended_pid)
+    """print(str(recommended_pid) + " " + str(cand[recommended_pid]))
+    for k,v in sorted(cand.items(),key=lambda x:x[1]):
+        print(k,v)
+    exit(0)"""
