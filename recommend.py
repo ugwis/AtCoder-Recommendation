@@ -17,6 +17,8 @@ import math
 url_media = "https://upload.twitter.com/1.1/media/upload.json"
 url_text = "https://api.twitter.com/1.1/statuses/update.json"
 
+contest_atcoder = "contest.atcoder.jp"
+
 def fetch_count_problems():
     connector = psycopg2.connect(pguser.arg)
     cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -88,11 +90,19 @@ def fetch_uid(userid):
     connector.close()
     return uid
 
-def count_solved(solveds,pid):
+def count_solved(pid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
     count=0
-    for solved in solveds:
-        if pid == solved:
-            count+=1
+    try:
+        cur.execute("""SELECT count(0) from solved where pid=(%s)""",(pid,))
+        connector.commit()
+        for row in cur:
+            count = row['count']
+    except Exception as e:
+        print(e.message)
+    cur.close()
+    connector.close()
     return count
 
 def fetch_problem_url(pid):
@@ -110,6 +120,61 @@ def fetch_problem_url(pid):
     connector.close()
     return url
 
+def fetch_contestid(pid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    contestid = ""
+    try:
+        cur.execute("""SELECT contestid FROM contests LEFT JOIN problems on contests.cid=problems.cid WHERE pid=(%s)""",(pid,))
+        connector.commit()
+        for row in cur:
+            contestid = row['contestid']
+    except Exception as e:
+        print(e.message)
+    cur.close()
+    connector.close()
+    return contestid
+
+def fetch_problemid(pid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    problemid = ""
+    try:
+        cur.execute("""SELECT problemid FROM problems WHERE pid=(%s)""",(pid,))
+        connector.commit()
+        for row in cur:
+            problemid = row['problemid']
+    except Exception as e:
+        print(e.message)
+    cur.close()
+    connector.close()
+    return problemid
+
+def fetch_userid(uid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    userid = ""
+    try:
+        cur.execute("""SELECT userid FROM users WHERE uid=(%s)""",(uid,))
+        connector.commit()
+        for row in cur:
+            userid = row['userid']
+    except Exception as e:
+        print(e.message)
+    cur.close()
+    connector.close()
+    return userid
+
+def is_solved(pid,uid):
+    contestid = fetch_contestid(pid)
+    problemid = fetch_problemid(pid)
+    userid = fetch_userid(uid)
+    url = "http://" + contestid + "." + contest_atcoder + "/submissions/all?task_screen_name=" + problemid + "&user_screen_name=" + userid + "&status=AC"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text.encode(r.encoding),"html.parser")
+    succ = soup.find_all("tr")
+    return len(succ) > 0
+
 def recommend_problem(userid):
     uid=fetch_uid(userid)
     user_solved = fetch_users_solveds()
@@ -124,10 +189,14 @@ def recommend_problem(userid):
                     cand[solved_pid] = 0.0
                 cand[solved_pid] += distance
     for k,v in cand.items():
-        v*=count_solved(user_solved,k)
+        count = count_solved(k)
+        if count == 0:
+            cand[k]=0
+        else:
+            cand[k]/=count
     recommended_pid = max(cand,key=(lambda x:cand[x]))
-    return fetch_problem_url(recommended_pid)
-    """print(str(recommended_pid) + " " + str(cand[recommended_pid]))
-    for k,v in sorted(cand.items(),key=lambda x:x[1]):
-        print(k,v)
-    exit(0)"""
+    #return fetch_problem_url(recommended_pid)
+    for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
+        if not is_solved(k,uid):
+            return fetch_problem_url(k)
+    exit(0)
