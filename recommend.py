@@ -176,9 +176,39 @@ def is_solved(pid,uid):
     return len(succ) > 0
 
 def recommend_problem(userid):
+    uid = fetch_uid(userid)
+    user_solved = fetch_users_solveds()
+    users = fetch_user()
+    distances = []
+    for user in users:
+        # case: user does not solve any problem
+        if user['uid'] not in user_solved:
+            continue
+        distance = sim_distance(user_solved, uid, user['uid'])
+        distances.append([user['uid'],distance])
+    cand = {}
+    for rank, dist in zip(range(50,0,-1),sorted(distances, key=lambda x:x[1], reverse=True)):
+        for solved_pid in user_solved[dist[0]] - user_solved[uid]:
+            if not solved_pid in cand:
+                cand[solved_pid] = 0.0
+            cand[solved_pid] += rank
+    for k,v in cand.items():
+        count = count_solved(k)
+        if count == 0:
+            cand[k] = 0
+    recommended_pid = max(cand,key=(lambda x:cand[x]))
+    for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
+        print(fetch_problem_url(k),v)
+        #if not is_solved(k,uid):
+        #    return fetch_problem_url(k)
+    return fetch_problem_url(recommended_pid)
+
+"""
+def prev_recommend_problem(userid):
     uid=fetch_uid(userid)
     user_solved = fetch_users_solveds()
     users = fetch_user()
+    # candidate for problem
     cand = {}
     for user in users:
         if user['uid'] in user_solved:
@@ -193,10 +223,10 @@ def recommend_problem(userid):
         if count == 0:
             cand[k]=0
         else:
-            cand[k]/=count
+            cand[k]-=count
     recommended_pid = max(cand,key=(lambda x:cand[x]))
-    #return fetch_problem_url(recommended_pid)
     for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
-        if not is_solved(k,uid):
-            return fetch_problem_url(k)
-    exit(0)
+        print(fetch_problem_url(k),v)
+        #if not is_solved(k,uid):
+        #    return fetch_problem_url(k)
+    return fetch_problem_url(recommended_pid)"""
