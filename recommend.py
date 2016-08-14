@@ -9,6 +9,8 @@ import dateutil.parser
 import pguser
 import numpy as np
 import json
+import datetime
+import pickle
 from bs4 import BeautifulSoup
 from operator import itemgetter
 from sets import Set
@@ -120,6 +122,22 @@ def fetch_problem_url(pid):
     connector.close()
     return url
 
+def fetch_problem_title(pid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    title = ""
+    try:
+        cur.execute("""select title from problems where pid=(%s);""",(pid,))
+        connector.commit()
+        for row in cur:
+            title = row['title']
+    except Exception as e:
+        print(e.message)
+    cur.close()
+    connector.close()
+    return title
+
+
 def fetch_contestid(pid):
     connector = psycopg2.connect(pguser.arg)
     cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -175,11 +193,13 @@ def is_solved(pid,uid):
     succ = soup.find_all("tr")
     return len(succ) > 0
 
-def recommend_problem(userid):
+def recommend_analysis(userid):
+    userid = userid.replace('/','')
     uid = fetch_uid(userid)
     user_solved = fetch_users_solveds()
     users = fetch_user()
     distances = []
+    #ユーザ間の距離を計算
     for user in users:
         # case: user does not solve any problem
         if user['uid'] not in user_solved:
@@ -198,37 +218,47 @@ def recommend_problem(userid):
             cand[k] = 0
     #recommended_pid = max(cand,key=(lambda x:cand[x]))
     ret = []
+    #print(json.dumps(sorted(cand.items(),key=lambda x:x[1],reverse=True)))
     for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
-        if not is_solved(k,uid):
-            ret.append(fetch_problem_url(k))
-            if len(ret) == 3:
-                return ret
+        ret.append({'pid':k,'score':v,'url':fetch_problem_url(k),'title':fetch_problem_title(k)})
+    
+    expire = datetime.datetime.today() + datetime.timedelta(days=3)
+    with open("./cache/" + userid + ".pick",mode='wb') as f:
+        pickle.dump({'expire':expire,'data':ret},f)
+    #return ret
     #return fetch_problem_url(recommended_pid)
 
-"""
-def prev_recommend_problem(userid):
-    uid=fetch_uid(userid)
-    user_solved = fetch_users_solveds()
-    users = fetch_user()
-    # candidate for problem
-    cand = {}
-    for user in users:
-        if user['uid'] in user_solved:
-            distance = sim_distance(user_solved,uid,user['uid'])
-            #print(user['userid'] + " " + str(distance))
-            for solved_pid in user_solved[user['uid']] - user_solved[uid]:
-                if not solved_pid in cand:
-                    cand[solved_pid] = 0.0
-                cand[solved_pid] += distance
-    for k,v in cand.items():
-        count = count_solved(k)
-        if count == 0:
-            cand[k]=0
+def recommend(userid):
+    userid = userid.replace('/','')
+    uid = fetch_uid(userid)
+    easy = []
+    medium = []
+    hard = []
+    with open("./cache/" + userid + ".pick",mode='rb') as f:
+        pick = pickle.load(f)
+        if pick['expire'] < datetime.datetime.today():
+            return None
         else:
-            cand[k]-=count
-    recommended_pid = max(cand,key=(lambda x:cand[x]))
-    for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
-        print(fetch_problem_url(k),v)
-        #if not is_solved(k,uid):
-        #    return fetch_problem_url(k)
-    return fetch_problem_url(recommended_pid)"""
+            # easy
+            for v in pick['data']:
+                if not is_solved(v['pid'],uid):
+                    easy.append(v)
+                if len(easy) == 3:
+                    break
+            # medium
+            for v in pick['data']:
+                if easy[0]['score']/2 > v['score']:
+                    if not is_solved(v['pid'],uid):
+                        medium.append(v)
+                    if len(medium) == 3:
+                        break
+            # hard
+            for v in pick['data']:
+                if medium[0]['score']/4 > v['score']:
+                    if not is_solved(v['pid'],uid):
+                        hard.append(v)
+                    if len(hard) == 3:
+                        break
+
+    return easy,medium,hard
+
