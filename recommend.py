@@ -196,12 +196,14 @@ def recommend_problem(userid):
         count = count_solved(k)
         if count == 0:
             cand[k] = 0
-    recommended_pid = max(cand,key=(lambda x:cand[x]))
+    #recommended_pid = max(cand,key=(lambda x:cand[x]))
+    ret = []
     for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
-        print(fetch_problem_url(k),v)
-        #if not is_solved(k,uid):
-        #    return fetch_problem_url(k)
-    return fetch_problem_url(recommended_pid)
+        if not is_solved(k,uid):
+            ret.append(fetch_problem_url(k))
+            if len(ret) == 3:
+                return ret
+    #return fetch_problem_url(recommended_pid)
 
 """
 def prev_recommend_problem(userid):
