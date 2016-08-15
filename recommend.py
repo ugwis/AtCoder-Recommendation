@@ -230,35 +230,40 @@ def recommend_analysis(userid):
 
 def recommend(userid):
     userid = userid.replace('/','')
+    print("recommend target:" + userid)
     uid = fetch_uid(userid)
+    error = None
     easy = []
     medium = []
     hard = []
-    with open("./cache/" + userid + ".pick",mode='rb') as f:
-        pick = pickle.load(f)
-        if pick['expire'] < datetime.datetime.today():
-            return None
-        else:
-            # easy
-            for v in pick['data']:
-                if not is_solved(v['pid'],uid):
-                    easy.append(v)
-                if len(easy) == 3:
-                    break
-            # medium
-            for v in pick['data']:
-                if easy[0]['score']/2 > v['score']:
+    try:
+        with open("./cache/" + userid + ".pick",mode='rb') as f:
+            pick = pickle.load(f)
+            if pick['expire'] < datetime.datetime.today():
+                return None
+            else:
+                # easy
+                for v in pick['data']:
                     if not is_solved(v['pid'],uid):
-                        medium.append(v)
-                    if len(medium) == 3:
+                        easy.append(v)
+                    if len(easy) == 3:
                         break
-            # hard
-            for v in pick['data']:
-                if medium[0]['score']/4 > v['score']:
-                    if not is_solved(v['pid'],uid):
-                        hard.append(v)
-                    if len(hard) == 3:
-                        break
+                # medium
+                for v in pick['data']:
+                    if easy[0]['score']/2 > v['score']:
+                        if not is_solved(v['pid'],uid):
+                            medium.append(v)
+                        if len(medium) == 3:
+                            break
+                # hard
+                for v in pick['data']:
+                    if medium[0]['score']/4 > v['score']:
+                        if not is_solved(v['pid'],uid):
+                            hard.append(v)
+                        if len(hard) == 3:
+                            break
+    except IOError, (errno, strerror):
+        print("I/O error(%s): %s" % (errno,strerror))
 
     return easy,medium,hard
 
