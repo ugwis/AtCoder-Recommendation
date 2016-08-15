@@ -3,3 +3,4 @@ twitterkeys.pyc
 pguser.py
 pguser.pyc
 recommend.pyc
+cache/
