@@ -1,6 +1,10 @@
 from bottle import route,run,template
 import recommend
 
+@route('/')
+def index():
+    return template('index')
+
 @route('/<userid>')
 def index(userid):
     easy,medium,hard = recommend.recommend(userid)
