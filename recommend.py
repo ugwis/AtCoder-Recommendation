@@ -238,30 +238,29 @@ def recommend(userid):
     hard = []
     try:
         with open("./cache/" + userid + ".pick",mode='rb') as f:
+            print('opened')
             pick = pickle.load(f)
-            if pick['expire'] < datetime.datetime.today():
-                return None
-            else:
-                # easy
-                for v in pick['data']:
+            # easy
+            for v in pick['data']:
+                if not is_solved(v['pid'],uid):
+                    easy.append(v)
+                if len(easy) == 3:
+                    break
+            # medium
+            for v in pick['data']:
+                if easy[0]['score']/2 > v['score']:
                     if not is_solved(v['pid'],uid):
-                        easy.append(v)
-                    if len(easy) == 3:
+                        medium.append(v)
+                    if len(medium) == 3:
                         break
-                # medium
-                for v in pick['data']:
-                    if easy[0]['score']/2 > v['score']:
-                        if not is_solved(v['pid'],uid):
-                            medium.append(v)
-                        if len(medium) == 3:
-                            break
-                # hard
-                for v in pick['data']:
-                    if medium[0]['score']/4 > v['score']:
-                        if not is_solved(v['pid'],uid):
-                            hard.append(v)
-                        if len(hard) == 3:
-                            break
+            # hard
+            for v in pick['data']:
+                if medium[0]['score']/4 > v['score']:
+                    if not is_solved(v['pid'],uid):
+                        hard.append(v)
+                    if len(hard) == 3:
+                        break
+            print('returning')
     except IOError, (errno, strerror):
         print("I/O error(%s): %s" % (errno,strerror))
 
