@@ -2,6 +2,8 @@
 
 <html>
 <head>
+<!-- Place this tag in your head or just before your close body tag. -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>
 <script type="text/javascript">
 <!--
 var getUrlVars = function(){
@@ -32,5 +34,7 @@ function func(){
 <input id="id" name="target">
 <input type="button" value="送信" onClick="location.href='http://sandbox.ugwis.net/recommend/' + document.forms.form.id.value;">
 </form>
+<!-- Place this tag where you want the button to render. -->
+<a class="github-button" href="https://github.com/ugwis/AtCoder-Recommendation" data-style="mega" data-count-href="/ugwis/AtCoder-Recommendation/stargazers" data-count-api="/repos/ugwis/AtCoder-Recommendation#stargazers_count" data-count-aria-label="# stargazers on GitHub" aria-label="Star ugwis/AtCoder-Recommendation on GitHub">Star</a>
 </body>
 </html>

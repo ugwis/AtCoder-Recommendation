@@ -2,6 +2,8 @@
 <html>
 	<head>
 		<title>{{userid}}</title>
+		<!-- Place this tag in your head or just before your close body tag. -->
+		<script async defer src="https://buttons.github.io/buttons.js"></script>
 	</head>
 	<body style="margin:0px;">
 		<h2>{{userid}}さんへのお勧め問題</h2>
@@ -37,5 +39,7 @@
 			}
 		}(document, 'script', 'twitter-wjs');
 	</script>
+	<!-- Place this tag where you want the button to render. -->
+	<a class="github-button" href="https://github.com/ugwis/AtCoder-Recommendation" data-style="mega" data-count-href="/ugwis/AtCoder-Recommendation/stargazers" data-count-api="/repos/ugwis/AtCoder-Recommendation#stargazers_count" data-count-aria-label="# stargazers on GitHub" aria-label="Star ugwis/AtCoder-Recommendation on GitHub">Star</a>
 	</body>
 </html>
