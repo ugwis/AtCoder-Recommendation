@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from bottle import route,run,template
+from bottle import route,run,template,request
 import recommend
 
 @route('/')
@@ -10,6 +10,7 @@ def index():
 
 @route('/<userid>')
 def index(userid):
+    print(request.get_header('X-Forwarded-For'));
     easy,medium,hard = recommend.recommend(userid)
     shareText = userid+'さんのお勧め問題は'
     problems = []
