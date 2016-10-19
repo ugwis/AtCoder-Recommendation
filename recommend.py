@@ -60,7 +60,8 @@ def fetch_users_solveds():
 
 def sim_distance(users,person1,person2):
     #return len(users[person1] ^ users[person2])
-    return 1./(1 + len(users[person1] ^ users[person2]))
+    #return 1./(1 + len(users[person1] ^ users[person2]))
+    return len(users[person1] & users[person2]) / len(users[person1] | users[person2])
 
 def fetch_user():
     connector = psycopg2.connect(pguser.arg)
