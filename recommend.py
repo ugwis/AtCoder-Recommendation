@@ -15,11 +15,17 @@ from bs4 import BeautifulSoup
 from operator import itemgetter
 from sets import Set
 import math
+import pymongo
 
 url_media = "https://upload.twitter.com/1.1/media/upload.json"
 url_text = "https://api.twitter.com/1.1/statuses/update.json"
 
 contest_atcoder = "contest.atcoder.jp"
+
+connect = pymongo.MongoClient('localhost', 27017)
+db = connect.atcoder
+
+collect = db.recommend
 
 def fetch_count_problems():
     connector = psycopg2.connect(pguser.arg)
@@ -224,8 +230,9 @@ def recommend_analysis(userid):
         ret.append({'pid':k,'score':v,'url':fetch_problem_url(k),'title':fetch_problem_title(k)})
     
     expire = datetime.datetime.today() + datetime.timedelta(days=3)
-    with open("./cache/" + userid + ".pick",mode='wb') as f:
-        pickle.dump({'expire':expire,'data':ret},f)
+    collect.save({'userid':userid,'data':ret})
+    #with open("./cache/" + userid + ".pick",mode='wb') as f:
+    #    pickle.dump({'expire':expire,'data':ret},f)
     #return ret
     #return fetch_problem_url(recommended_pid)
 
@@ -238,24 +245,26 @@ def recommend(userid):
     medium = []
     hard = []
     try:
-        with open("./cache/" + userid + ".pick",mode='rb') as f:
+        for m in collect.find({'userid':userid}):
+        #with open("./cache/" + userid + ".pick",mode='rb') as f:
             print('opened')
-            pick = pickle.load(f)
+            #pick = pickle.load(f)
+            pick = m['data']
             # easy
-            for v in pick['data']:
+            for v in pick:
                 if not is_solved(v['pid'],uid):
                     easy.append(v)
                 if len(easy) == 3:
                     break
             # medium
-            for v in pick['data']:
+            for v in pick:
                 if easy[0]['score']/2 > v['score']:
                     if not is_solved(v['pid'],uid):
                         medium.append(v)
                     if len(medium) == 3:
                         break
             # hard
-            for v in pick['data']:
+            for v in pick:
                 if medium[0]['score']/4 > v['score']:
                     if not is_solved(v['pid'],uid):
                         hard.append(v)

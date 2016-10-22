@@ -14,9 +14,10 @@ def index(userid):
     easy,medium,hard = recommend.recommend(userid)
     shareText = userid+'さんのお勧め問題は'
     problems = []
-    for p in easy:
-        problems.append('「' + p['title'] + '」')
-    shareText+=','.join(problems)
+    #for p in easy:
+    #    print(type(p['title']))
+    #    problems.append('%s'%p['title'])
+    #shareText+=','.join(problems)
     return template('frame', userid=userid,easy=easy,medium=medium,hard=hard,shareText=shareText)
 
 run(host='localhost', port=8000)
