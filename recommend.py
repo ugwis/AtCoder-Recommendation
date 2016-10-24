@@ -191,6 +191,23 @@ def fetch_userid(uid):
     return userid
 
 def is_solved(pid,uid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    try:
+        cur.execute("""SELECT count(rid) as cnt FROM solved WHERE pid=(%s) AND uid=(%s)""",(pid,uid))
+        connector.commit()
+        for row in cur:
+            print(row['cnt'])
+            if row['cnt'] > 0:
+                return True
+    except Exception as e:
+        print(e.message)
+    cur.close()
+    connector.close()
+    return False
+
+"""
+def is_solved(pid,uid):
     contestid = fetch_contestid(pid)
     problemid = fetch_problemid(pid)
     userid = fetch_userid(uid)
@@ -199,6 +216,7 @@ def is_solved(pid,uid):
     soup = BeautifulSoup(r.text.encode(r.encoding),"html.parser")
     succ = soup.find_all("tr")
     return len(succ) > 0
+"""
 
 def recommend_analysis(userid):
     userid = userid.replace('/','')
@@ -254,21 +272,21 @@ def recommend(userid):
             for v in pick:
                 if not is_solved(v['pid'],uid):
                     easy.append(v)
-                if len(easy) == 3:
+                if len(easy) >= 3:
                     break
             # medium
             for v in pick:
                 if easy[0]['score']/2 > v['score']:
                     if not is_solved(v['pid'],uid):
                         medium.append(v)
-                    if len(medium) == 3:
+                    if len(medium) >= 3:
                         break
             # hard
             for v in pick:
                 if medium[0]['score']/4 > v['score']:
                     if not is_solved(v['pid'],uid):
                         hard.append(v)
-                    if len(hard) == 3:
+                    if len(hard) >= 3:
                         break
             print('returning')
     except IOError, (errno, strerror):
