@@ -270,21 +270,21 @@ def recommend(userid):
             pick = m['data']
             # easy
             for v in pick:
-                if not is_solved(v['pid'],uid):
+                if not is_solved(v['pid'],uid) and v not in easy:
                     easy.append(v)
                 if len(easy) >= 3:
                     break
             # medium
             for v in pick:
                 if easy[0]['score']/2 > v['score']:
-                    if not is_solved(v['pid'],uid):
+                    if not is_solved(v['pid'],uid) and v not in medium:
                         medium.append(v)
                     if len(medium) >= 3:
                         break
             # hard
             for v in pick:
                 if medium[0]['score']/4 > v['score']:
-                    if not is_solved(v['pid'],uid):
+                    if not is_solved(v['pid'],uid) and v not in hard:
                         hard.append(v)
                     if len(hard) >= 3:
                         break
