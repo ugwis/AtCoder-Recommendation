@@ -232,11 +232,11 @@ def recommend_analysis(userid):
         distance = sim_distance(user_solved, uid, user['uid'])
         distances.append([user['uid'],distance])
     cand = {}
-    for rank, dist in zip(range(50,0,-1),sorted(distances, key=lambda x:x[1], reverse=True)):
+    for dist in sorted(distances, key=lambda x:x[1], reverse=True):
         for solved_pid in user_solved[dist[0]] - user_solved[uid]:
             if not solved_pid in cand:
                 cand[solved_pid] = 0.0
-            cand[solved_pid] += rank
+            cand[solved_pid] += dist[1]
     for k,v in cand.items():
         count = count_solved(k)
         if count == 0:
