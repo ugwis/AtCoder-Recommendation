@@ -66,8 +66,9 @@ def fetch_users_solveds():
 
 def sim_distance(users,person1,person2):
     #return len(users[person1] ^ users[person2])
+    w
     #return 1./(1 + len(users[person1] ^ users[person2]))
-    return len(users[person1] & users[person2]) / len(users[person1] | users[person2])
+    return float(len(users[person1] & users[person2])) / float(len(users[person1] | users[person2]))
 
 def fetch_user():
     connector = psycopg2.connect(pguser.arg)
@@ -246,7 +247,6 @@ def recommend_analysis(userid):
     #print(json.dumps(sorted(cand.items(),key=lambda x:x[1],reverse=True)))
     for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
         ret.append({'pid':k,'score':v,'url':fetch_problem_url(k),'title':fetch_problem_title(k)})
-    
     expire = datetime.datetime.today() + datetime.timedelta(days=3)
     collect.save({'userid':userid,'data':ret})
     #with open("./cache/" + userid + ".pick",mode='wb') as f:
