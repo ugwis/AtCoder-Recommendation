@@ -66,7 +66,6 @@ def fetch_users_solveds():
 
 def sim_distance(users,person1,person2):
     #return len(users[person1] ^ users[person2])
-    w
     #return 1./(1 + len(users[person1] ^ users[person2]))
     return float(len(users[person1] & users[person2])) / float(len(users[person1] | users[person2]))
 
@@ -100,6 +99,19 @@ def fetch_uid(userid):
     connector.close()
     return uid
 
+def solved_pids(uid):
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    pids = []
+    try:
+        cur.execute("""SELECT DISTINCT pid FROM solved WHERE uid=(%s)""",(uid,))
+        connector.commit()
+        for row in cur:
+            pids.append(row['pid'])
+    except Exception as e:
+        print(e.message)
+    return pids
+
 def count_solved(pid):
     connector = psycopg2.connect(pguser.arg)
     cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -114,6 +126,18 @@ def count_solved(pid):
     cur.close()
     connector.close()
     return count
+
+def fetch_problems():
+    connector = psycopg2.connect(pguser.arg)
+    cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    problems = {}
+    try:
+        cur.execute("""select pid, 'http://' || contestid || '.cotnest.atcoder.jp/tasks/' || problemid as url, title from problems left join contests on problems.cid = contests.cid;""")
+        for row in cur:
+            problems[row['pid']] = row
+    except Exception as e:
+        print(e.message)
+    return problems
 
 def fetch_problem_url(pid):
     connector = psycopg2.connect(pguser.arg)
@@ -225,6 +249,7 @@ def recommend_analysis(userid):
     user_solved = fetch_users_solveds()
     users = fetch_user()
     distances = []
+    problems = fetch_problems()
     #ユーザ間の距離を計算
     for user in users:
         # case: user does not solve any problem
@@ -238,15 +263,12 @@ def recommend_analysis(userid):
             if not solved_pid in cand:
                 cand[solved_pid] = 0.0
             cand[solved_pid] += dist[1]
-    for k,v in cand.items():
-        count = count_solved(k)
-        if count == 0:
-            cand[k] = 0
     #recommended_pid = max(cand,key=(lambda x:cand[x]))
     ret = []
     #print(json.dumps(sorted(cand.items(),key=lambda x:x[1],reverse=True)))
-    for k,v in sorted(cand.items(),key=lambda x:x[1],reverse=True):
-        ret.append({'pid':k,'score':v,'url':fetch_problem_url(k),'title':fetch_problem_title(k)})
+    sorted_items = sorted(cand.items(),key=lambda x:x[1],reverse=True)
+    for k,v in sorted_items:
+        ret.append({'pid':k,'score':v,'url':problems[k]['url'],'title':problems[k]['title']})
     expire = datetime.datetime.today() + datetime.timedelta(days=3)
     collect.save({'userid':userid,'data':ret})
     #with open("./cache/" + userid + ".pick",mode='wb') as f:
