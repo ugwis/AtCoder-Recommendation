@@ -132,7 +132,7 @@ def fetch_problems():
     cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
     problems = {}
     try:
-        cur.execute("""select pid, 'http://' || contestid || '.cotnest.atcoder.jp/tasks/' || problemid as url, title from problems left join contests on problems.cid = contests.cid;""")
+        cur.execute("""select pid, 'http://' || contestid || '.contest.atcoder.jp/tasks/' || problemid as url, title from problems left join contests on problems.cid = contests.cid;""")
         for row in cur:
             problems[row['pid']] = row
     except Exception as e:
