@@ -49,7 +49,7 @@ def fetch_users_solveds():
     cur = connector.cursor(cursor_factory=psycopg2.extras.DictCursor)
     solveds = []
     try:
-        cur.execute("""SELECT * from solved;""")
+        cur.execute("""SELECT uid,pid from solved;""")
         connector.commit()
         for row in cur:
             solveds.append(row)
@@ -57,16 +57,23 @@ def fetch_users_solveds():
         print(e.message)
     cur.close()
     connector.close()
+    fetched_user = fetch_user()
     users = {}
+    for user in fetched_user:
+        users[user['uid']] = Set([])
     for solved in solveds:
-        if not solved['uid'] in users:
-            users[solved['uid']] = Set([])
+        if solved['uid'] not in users:
+            continue
         users[solved['uid']].add(solved['pid'])
     return users
 
 def sim_distance(users,person1,person2):
     #return len(users[person1] ^ users[person2])
     #return 1./(1 + len(users[person1] ^ users[person2]))
+    if person1 not in users or person2 not in users:
+        return 1
+    if len(users[person1] | users[person2]) == 0:
+        return 1
     return float(len(users[person1] & users[person2])) / float(len(users[person1] | users[person2]))
 
 def fetch_user():
@@ -243,10 +250,10 @@ def is_solved(pid,uid):
     return len(succ) > 0
 """
 
-def recommend_analysis(userid):
+def recommend_analysis(user_solved, userid):
     userid = userid.replace('/','')
+    print(userid)
     uid = fetch_uid(userid)
-    user_solved = fetch_users_solveds()
     users = fetch_user()
     distances = []
     problems = fetch_problems()
@@ -271,10 +278,7 @@ def recommend_analysis(userid):
         ret.append({'pid':k,'score':v,'url':problems[k]['url'],'title':problems[k]['title']})
     expire = datetime.datetime.today() + datetime.timedelta(days=3)
     collect.save({'userid':userid,'data':ret})
-    #with open("./cache/" + userid + ".pick",mode='wb') as f:
-    #    pickle.dump({'expire':expire,'data':ret},f)
-    #return ret
-    #return fetch_problem_url(recommended_pid)
+    print('complete')
 
 def recommend(userid):
     userid = userid.replace('/','')
