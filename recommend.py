@@ -16,6 +16,7 @@ from operator import itemgetter
 from sets import Set
 import math
 import pymongo
+import time
 
 url_media = "https://upload.twitter.com/1.1/media/upload.json"
 url_text = "https://api.twitter.com/1.1/statuses/update.json"
@@ -251,6 +252,7 @@ def is_solved(pid,uid):
 """
 
 def recommend_analysis(user_solved, userid):
+    time1 = time.time()
     userid = userid.replace('/','')
     print(userid)
     uid = fetch_uid(userid)
@@ -258,12 +260,14 @@ def recommend_analysis(user_solved, userid):
     distances = []
     problems = fetch_problems()
     #ユーザ間の距離を計算
+    time2 = time.time()
     for user in users:
         # case: user does not solve any problem
         if user['uid'] not in user_solved:
             continue
         distance = sim_distance(user_solved, uid, user['uid'])
         distances.append([user['uid'],distance])
+    time3 = time.time()
     cand = {}
     for dist in sorted(distances, key=lambda x:x[1], reverse=True):
         for solved_pid in user_solved[dist[0]] - user_solved[uid]:
@@ -271,13 +275,21 @@ def recommend_analysis(user_solved, userid):
                 cand[solved_pid] = 0.0
             cand[solved_pid] += dist[1]
     #recommended_pid = max(cand,key=(lambda x:cand[x]))
+    time4 = time.time()
     ret = []
     #print(json.dumps(sorted(cand.items(),key=lambda x:x[1],reverse=True)))
     sorted_items = sorted(cand.items(),key=lambda x:x[1],reverse=True)
     for k,v in sorted_items:
         ret.append({'pid':k,'score':v,'url':problems[k]['url'],'title':problems[k]['title']})
+    time5 = time.time()
     expire = datetime.datetime.today() + datetime.timedelta(days=3)
     collect.save({'userid':userid,'data':ret})
+    time6 = time.time()
+    print('time2 - time1: ' + str(time2 - time1))
+    print('time3 - time2: ' + str(time3 - time2))
+    print('time4 - time3: ' + str(time4 - time3))
+    print('time5 - time4: ' + str(time5 - time4))
+    print('time6 - time5: ' + str(time6 - time5))
     print('complete')
 
 def recommend(userid):
