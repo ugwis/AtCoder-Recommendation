@@ -18,7 +18,8 @@ for v in users:
         continue
     if v['userid'] is not None:
         try:
-            if collect.count({'userid':v['userid']}) == 0:
-                recommend.recommend_analysis(user_solved, v['userid'])
+            if collect.count({'userid':v['userid']}) != 0:
+                collect.remove({'userid':v['userid']})
+            recommend.recommend_analysis(user_solved, v['userid'])
         except Exception as e:
             print()
